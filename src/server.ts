@@ -1,13 +1,36 @@
 import Fastify from "fastify";
+import { validate as isUuid } from "uuid";
+import { catalog } from "@/storage/catalog.js";
 
 export function buildServer() {
   const app = Fastify({
     logger: true,
   });
 
-  app.get("api/products", async function handler() {
-    return { hello: "world" };
+  app.get("/api/products", async function handler(request, reply) {
+    return reply.code(200).send(catalog);
   });
+
+  app.get<{ Params: { id: string } }>(
+    "/api/products/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+
+      if (!isUuid(id)) {
+        return reply
+          .code(400)
+          .send({ message: "Invalid productId. UUID is expected." });
+      }
+
+      const product = catalog.find((element) => element.id === id);
+
+      if (!product) {
+        return reply.code(404).send({ message: "Product not found" });
+      }
+
+      return reply.code(200).send(product);
+    },
+  );
 
   return app;
 }
