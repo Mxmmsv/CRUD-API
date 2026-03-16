@@ -44,7 +44,7 @@ export function buildServer() {
           properties: {
             name: { type: "string" },
             description: { type: "string" },
-            price: { type: "number" },
+            price: { type: "number", exclusiveMinimum: 0 },
             category: { type: "string" },
             inStock: { type: "boolean" },
           },
