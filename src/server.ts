@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { validate as isUuid } from "uuid";
 import { catalog } from "@/storage/catalog.js";
+import { Product } from "@/storage/types.js";
 
 export function buildServer() {
   const app = Fastify({
@@ -29,6 +30,42 @@ export function buildServer() {
       }
 
       return reply.code(200).send(product);
+    },
+  );
+
+  app.post<{ Body: Omit<Product, "id"> }>(
+    "/api/products",
+    {
+      schema: {
+        body: {
+          type: "object",
+          required: ["name", "description", "price", "category", "inStock"],
+          additionalProperties: false,
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+            price: { type: "number" },
+            category: { type: "string" },
+            inStock: { type: "boolean" },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { name, description, price, category, inStock } = request.body;
+
+      const product: Product = {
+        id: crypto.randomUUID(),
+        name,
+        description,
+        price,
+        category,
+        inStock,
+      };
+
+      catalog.push(product);
+
+      return reply.code(201).send(product);
     },
   );
 
