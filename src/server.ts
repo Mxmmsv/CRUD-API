@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import { validate as isUuid } from "uuid";
 import { catalog } from "@/storage/catalog.js";
 import { Product } from "@/storage/types.js";
+import { UUID } from "node:crypto";
 
 export function buildServer() {
   const app = Fastify({
@@ -12,7 +13,7 @@ export function buildServer() {
     return reply.code(200).send(catalog);
   });
 
-  app.get<{ Params: { id: string } }>(
+  app.get<{ Params: { id: UUID } }>(
     "/api/products/:id",
     async (request, reply) => {
       const { id } = request.params;
@@ -66,6 +67,50 @@ export function buildServer() {
       catalog.push(product);
 
       return reply.code(201).send(product);
+    },
+  );
+
+  app.put<{ Params: { id: string }; Body: Omit<Product, "id"> }>(
+    "/api/products/:id",
+    {
+      schema: {
+        body: {
+          type: "object",
+          required: ["name", "description", "price", "category", "inStock"],
+          additionalProperties: false,
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+            price: { type: "number", exclusiveMinimum: 0 },
+            category: { type: "string" },
+            inStock: { type: "boolean" },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { name, description, price, category, inStock } = request.body;
+
+      if (!isUuid(id)) {
+        return reply
+          .code(400)
+          .send({ message: "Invalid productId. UUID is expected." });
+      }
+
+      const product = catalog.find((element) => element.id === id);
+
+      if (!product) {
+        return reply.code(404).send({ message: "Product not found" });
+      }
+
+      product.name = name;
+      product.description = description;
+      product.price = price;
+      product.category = category;
+      product.inStock = inStock;
+
+      return reply.code(200).send(product);
     },
   );
 
