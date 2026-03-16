@@ -3,6 +3,10 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
@@ -11,6 +15,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "types": ["node"]
+  },
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "resolveFullExtension": ".js"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules"]
