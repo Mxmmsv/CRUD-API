@@ -1,8 +1,8 @@
-import Fastify, { FastifyReply } from "fastify";
+import Fastify, { FastifyError } from "fastify";
 import { validate as isUuid } from "uuid";
+import { UUID } from "node:crypto";
 import { catalog } from "@/storage/catalog.js";
 import { Product } from "@/storage/types.js";
-import { UUID } from "node:crypto";
 
 const productBodySchema = {
   schema: {
@@ -21,14 +21,6 @@ const productBodySchema = {
   },
 };
 
-const isIdCorrect = (id: UUID, reply: FastifyReply) => {
-  if (!isUuid(id)) {
-    return reply
-      .code(400)
-      .send({ message: "Invalid productId. UUID is expected." });
-  }
-};
-
 export function buildServer() {
   const app = Fastify({
     logger: true,
@@ -43,7 +35,11 @@ export function buildServer() {
     async (request, reply) => {
       const { id } = request.params;
 
-      isIdCorrect(id, reply);
+      if (!isUuid(id)) {
+        return reply
+          .code(400)
+          .send({ message: "Invalid productId. UUID is expected." });
+      }
 
       const product = catalog.find((element) => element.id === id);
 
@@ -83,7 +79,11 @@ export function buildServer() {
       const { id } = request.params;
       const { name, description, price, category, inStock } = request.body;
 
-      isIdCorrect(id, reply);
+      if (!isUuid(id)) {
+        return reply
+          .code(400)
+          .send({ message: "Invalid productId. UUID is expected." });
+      }
 
       const product = catalog.find((element) => element.id === id);
 
@@ -106,7 +106,11 @@ export function buildServer() {
     async (request, reply) => {
       const { id } = request.params;
 
-      isIdCorrect(id, reply);
+      if (!isUuid(id)) {
+        return reply
+          .code(400)
+          .send({ message: "Invalid productId. UUID is expected." });
+      }
 
       const productIndex = catalog.findIndex((element) => element.id === id);
 
@@ -119,6 +123,26 @@ export function buildServer() {
       return reply.code(204).send();
     },
   );
+
+  app.setNotFoundHandler((request, reply) => {
+    return reply.code(404).send({
+      message: `Route ${request.method} ${request.url} not found`,
+    });
+  });
+
+  app.setErrorHandler((error: FastifyError, request, reply) => {
+    if (error.validation) {
+      return reply.code(400).send({
+        message: "Request validation failed",
+      });
+    }
+
+    request.log.error(error);
+
+    return reply.code(500).send({
+      message: "Internal server error",
+    });
+  });
 
   return app;
 }
