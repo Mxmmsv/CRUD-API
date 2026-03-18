@@ -1,6 +1,8 @@
+import { randomUUID, UUID } from "node:crypto";
+
 import Fastify, { FastifyError } from "fastify";
 import { validate as isUuid } from "uuid";
-import { UUID } from "node:crypto";
+
 import { catalog } from "@/storage/catalog.js";
 import { Product } from "@/storage/types.js";
 
@@ -58,7 +60,7 @@ export function buildServer() {
       const { name, description, price, category, inStock } = request.body;
 
       const product: Product = {
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         name,
         description,
         price,

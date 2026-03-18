@@ -1,12 +1,22 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, test } from "node:test";
+
 import type { FastifyInstance } from "fastify";
+
 import { buildServer } from "../src/server.ts";
 import { catalog } from "../src/storage/catalog.ts";
+import type { Product } from "../src/storage/types.ts";
 
 let app: FastifyInstance;
 
-const createProductPayload = () => ({
+type ErrorResponse = {
+  message: string;
+};
+
+const parseBody = <T>(body: string): T => JSON.parse(body) as T;
+
+const createProductPayload = (): Omit<Product, "id"> => ({
   name: "Keyboard",
   description: "Mechanical keyboard",
   price: 120,
@@ -23,17 +33,17 @@ afterEach(async () => {
   await app.close();
 });
 
-test("GET /api/products returns an empty array when catalog is empty", async () => {
+void test("GET /api/products returns an empty array when catalog is empty", async () => {
   const response = await app.inject({
     method: "GET",
     url: "/api/products",
   });
 
   assert.equal(response.statusCode, 200);
-  assert.deepEqual(response.json(), []);
+  assert.deepEqual(parseBody<Product[]>(response.body), []);
 });
 
-test("POST then GET /api/products/:id returns the created product", async () => {
+void test("POST then GET /api/products/:id returns the created product", async () => {
   const createResponse = await app.inject({
     method: "POST",
     url: "/api/products",
@@ -42,7 +52,7 @@ test("POST then GET /api/products/:id returns the created product", async () => 
 
   assert.equal(createResponse.statusCode, 201);
 
-  const createdProduct = createResponse.json();
+  const createdProduct = parseBody<Product>(createResponse.body);
 
   const getResponse = await app.inject({
     method: "GET",
@@ -50,17 +60,17 @@ test("POST then GET /api/products/:id returns the created product", async () => 
   });
 
   assert.equal(getResponse.statusCode, 200);
-  assert.deepEqual(getResponse.json(), createdProduct);
+  assert.deepEqual(parseBody<Product>(getResponse.body), createdProduct);
 });
 
-test("PUT updates an existing product and DELETE removes it", async () => {
+void test("PUT updates an existing product and DELETE removes it", async () => {
   const createResponse = await app.inject({
     method: "POST",
     url: "/api/products",
     payload: createProductPayload(),
   });
 
-  const createdProduct = createResponse.json();
+  const createdProduct = parseBody<Product>(createResponse.body);
 
   const updatePayload = {
     name: "Mouse",
@@ -77,7 +87,7 @@ test("PUT updates an existing product and DELETE removes it", async () => {
   });
 
   assert.equal(updateResponse.statusCode, 200);
-  assert.deepEqual(updateResponse.json(), {
+  assert.deepEqual(parseBody<Product>(updateResponse.body), {
     id: createdProduct.id,
     ...updatePayload,
   });
@@ -95,24 +105,24 @@ test("PUT updates an existing product and DELETE removes it", async () => {
   });
 
   assert.equal(getDeletedResponse.statusCode, 404);
-  assert.deepEqual(getDeletedResponse.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(getDeletedResponse.body), {
     message: "Product not found",
   });
 });
 
-test("invalid product id returns 400", async () => {
+void test("invalid product id returns 400", async () => {
   const response = await app.inject({
     method: "GET",
     url: "/api/products/not-a-uuid",
   });
 
   assert.equal(response.statusCode, 400);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Invalid productId. UUID is expected.",
   });
 });
 
-test("invalid product payload returns 400", async () => {
+void test("invalid product payload returns 400", async () => {
   const response = await app.inject({
     method: "POST",
     url: "/api/products",
@@ -126,12 +136,12 @@ test("invalid product payload returns 400", async () => {
   });
 
   assert.equal(response.statusCode, 400);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Request validation failed",
   });
 });
 
-test("PUT returns 400 for invalid product id", async () => {
+void test("PUT returns 400 for invalid product id", async () => {
   const response = await app.inject({
     method: "PUT",
     url: "/api/products/not-a-uuid",
@@ -139,62 +149,62 @@ test("PUT returns 400 for invalid product id", async () => {
   });
 
   assert.equal(response.statusCode, 400);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Invalid productId. UUID is expected.",
   });
 });
 
-test("DELETE returns 400 for invalid product id", async () => {
+void test("DELETE returns 400 for invalid product id", async () => {
   const response = await app.inject({
     method: "DELETE",
     url: "/api/products/not-a-uuid",
   });
 
   assert.equal(response.statusCode, 400);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Invalid productId. UUID is expected.",
   });
 });
 
-test("PUT returns 404 when product does not exist", async () => {
+void test("PUT returns 404 when product does not exist", async () => {
   const response = await app.inject({
     method: "PUT",
-    url: `/api/products/${crypto.randomUUID()}`,
+    url: `/api/products/${randomUUID()}`,
     payload: createProductPayload(),
   });
 
   assert.equal(response.statusCode, 404);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Product not found",
   });
 });
 
-test("DELETE returns 404 when product does not exist", async () => {
+void test("DELETE returns 404 when product does not exist", async () => {
   const response = await app.inject({
     method: "DELETE",
-    url: `/api/products/${crypto.randomUUID()}`,
+    url: `/api/products/${randomUUID()}`,
   });
 
   assert.equal(response.statusCode, 404);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Product not found",
   });
 });
 
-test("unknown route returns 404 with a human-friendly message", async () => {
+void test("unknown route returns 404 with a human-friendly message", async () => {
   const response = await app.inject({
     method: "GET",
     url: "/some-non/existing/resource",
   });
 
   assert.equal(response.statusCode, 404);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Route GET /some-non/existing/resource not found",
   });
 });
 
-test("server errors return 500 with a human-friendly message", async () => {
-  app.get("/api/test-error", async () => {
+void test("server errors return 500 with a human-friendly message", async () => {
+  app.get("/api/test-error", () => {
     throw new Error("boom");
   });
 
@@ -204,7 +214,7 @@ test("server errors return 500 with a human-friendly message", async () => {
   });
 
   assert.equal(response.statusCode, 500);
-  assert.deepEqual(response.json(), {
+  assert.deepEqual(parseBody<ErrorResponse>(response.body), {
     message: "Internal server error",
   });
 });
