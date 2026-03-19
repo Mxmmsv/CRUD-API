@@ -12,14 +12,8 @@ import {
   isWorkerReadyMessage,
 } from "@/cluster/index.js";
 import { getPortFromEnv, getWorkerCountFromEnv } from "@/config/env.js";
-import {
-  createInMemoryProductStore,
-  createIpcProductStore,
-} from "@/storage/index.js";
-import type {
-  ProductStoreRequestMessage,
-  ProductStoreResponseMessage,
-} from "@/cluster/index.js";
+import { createInMemoryProductStore, createIpcProductStore } from "@/storage/index.js";
+import type { ProductStoreRequestMessage, ProductStoreResponseMessage } from "@/cluster/index.js";
 import type { ProductStore } from "@/storage/index.js";
 
 import { buildServer } from "./server.js";
@@ -36,10 +30,7 @@ if (cluster.isPrimary) {
 
 async function startPrimary() {
   const store = createInMemoryProductStore();
-  const workerPorts = Array.from(
-    { length: workerCount },
-    (_, index) => basePort + index + 1,
-  );
+  const workerPorts = Array.from({ length: workerCount }, (_, index) => basePort + index + 1);
   const readyWorkerPorts = new Set<number>();
   const selectWorkerPort = createRoundRobinSelector(workerPorts);
 
@@ -71,9 +62,7 @@ async function startWorker() {
   });
 
   if (!Number.isInteger(workerPort) || workerPort <= 0) {
-    throw new Error(
-      "WORKER_PORT environment variable must be a valid positive integer",
-    );
+    throw new Error("WORKER_PORT environment variable must be a valid positive integer");
   }
 
   try {
@@ -201,10 +190,7 @@ function proxyRequest(
       port: workerPort,
     },
     (workerResponse) => {
-      outgoingResponse.writeHead(
-        workerResponse.statusCode ?? 500,
-        workerResponse.headers,
-      );
+      outgoingResponse.writeHead(workerResponse.statusCode ?? 500, workerResponse.headers);
 
       workerResponse.pipe(outgoingResponse);
     },
@@ -224,10 +210,7 @@ function proxyRequest(
   incomingRequest.pipe(workerRequest);
 }
 
-async function waitForWorkers(
-  workerPorts: number[],
-  readyWorkerPorts: Set<number>,
-) {
+async function waitForWorkers(workerPorts: number[], readyWorkerPorts: Set<number>) {
   while (readyWorkerPorts.size < workerPorts.length) {
     await delay(50);
   }

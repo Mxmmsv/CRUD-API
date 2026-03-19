@@ -4,12 +4,7 @@ import type { UUID } from "node:crypto";
 import { isProductStoreResponseMessage } from "@/cluster/index.js";
 import type { ProductStoreRequestMessage } from "@/cluster/index.js";
 
-import type {
-  PendingRequest,
-  Product,
-  ProductPayload,
-  ProductStore,
-} from "./types.js";
+import type { PendingRequest, Product, ProductPayload, ProductStore } from "./types.js";
 
 export function createInMemoryProductStore(): ProductStore {
   const catalog: Product[] = [];
@@ -86,9 +81,7 @@ export function createIpcProductStore(): ProductStore {
     pendingRequest.reject(new Error(message.error));
   };
 
-  const sendRequest = (
-    operation: ProductStoreRequestMessage["operation"],
-  ): Promise<unknown> => {
+  const sendRequest = (operation: ProductStoreRequestMessage["operation"]): Promise<unknown> => {
     if (!process.send) {
       return Promise.reject(new Error("IPC channel is not available"));
     }
@@ -145,10 +138,7 @@ export function createIpcProductStore(): ProductStore {
         id,
       })) as boolean;
     },
-    async update(
-      id: UUID,
-      payload: ProductPayload,
-    ): Promise<Product | undefined> {
+    async update(id: UUID, payload: ProductPayload): Promise<Product | undefined> {
       const product = (await sendRequest({
         type: "update",
         id,

@@ -25,9 +25,7 @@ const productBodySchema = {
   },
 };
 
-export function buildServer({
-  store = createInMemoryProductStore(),
-}: BuildServerOptions = {}) {
+export function buildServer({ store = createInMemoryProductStore() }: BuildServerOptions = {}) {
   const app = Fastify({
     logger: true,
   });
@@ -36,36 +34,27 @@ export function buildServer({
     return reply.code(200).send(await store.getAll());
   });
 
-  app.get<{ Params: { id: UUID } }>(
-    "/api/products/:id",
-    async (request, reply) => {
-      const { id } = request.params;
+  app.get<{ Params: { id: UUID } }>("/api/products/:id", async (request, reply) => {
+    const { id } = request.params;
 
-      if (!isUuid(id)) {
-        return reply
-          .code(400)
-          .send({ message: "Invalid productId. UUID is expected." });
-      }
+    if (!isUuid(id)) {
+      return reply.code(400).send({ message: "Invalid productId. UUID is expected." });
+    }
 
-      const product = await store.getById(id);
+    const product = await store.getById(id);
 
-      if (!product) {
-        return reply.code(404).send({ message: "Product not found" });
-      }
+    if (!product) {
+      return reply.code(404).send({ message: "Product not found" });
+    }
 
-      return reply.code(200).send(product);
-    },
-  );
+    return reply.code(200).send(product);
+  });
 
-  app.post<{ Body: ProductPayload }>(
-    "/api/products",
-    productBodySchema,
-    async (request, reply) => {
-      const product = await store.create(request.body);
+  app.post<{ Body: ProductPayload }>("/api/products", productBodySchema, async (request, reply) => {
+    const product = await store.create(request.body);
 
-      return reply.code(201).send(product);
-    },
-  );
+    return reply.code(201).send(product);
+  });
 
   app.put<{ Params: { id: UUID }; Body: ProductPayload }>(
     "/api/products/:id",
@@ -74,9 +63,7 @@ export function buildServer({
       const { id } = request.params;
 
       if (!isUuid(id)) {
-        return reply
-          .code(400)
-          .send({ message: "Invalid productId. UUID is expected." });
+        return reply.code(400).send({ message: "Invalid productId. UUID is expected." });
       }
 
       const product = await store.update(id, request.body);
@@ -89,26 +76,21 @@ export function buildServer({
     },
   );
 
-  app.delete<{ Params: { id: UUID } }>(
-    "/api/products/:id",
-    async (request, reply) => {
-      const { id } = request.params;
+  app.delete<{ Params: { id: UUID } }>("/api/products/:id", async (request, reply) => {
+    const { id } = request.params;
 
-      if (!isUuid(id)) {
-        return reply
-          .code(400)
-          .send({ message: "Invalid productId. UUID is expected." });
-      }
+    if (!isUuid(id)) {
+      return reply.code(400).send({ message: "Invalid productId. UUID is expected." });
+    }
 
-      const isDeleted = await store.remove(id);
+    const isDeleted = await store.remove(id);
 
-      if (!isDeleted) {
-        return reply.code(404).send({ message: "Product not found" });
-      }
+    if (!isDeleted) {
+      return reply.code(404).send({ message: "Product not found" });
+    }
 
-      return reply.code(204).send();
-    },
-  );
+    return reply.code(204).send();
+  });
 
   app.setNotFoundHandler((request, reply) => {
     return reply.code(404).send({

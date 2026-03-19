@@ -21,24 +21,19 @@ const createProductPayload = () => ({
   inStock: true,
 });
 
-const parseJson = async <T>(response: Response): Promise<T> =>
-  (await response.json()) as T;
+const parseJson = async <T>(response: Response): Promise<T> => (await response.json()) as T;
 
 void test("start:multi shares state between workers", async () => {
   const basePort = await getFreePortBlock(workerCount + 1);
-  const multiProcess = spawn(
-    process.execPath,
-    ["--import", "tsx", "src/multi.ts"],
-    {
-      cwd: process.cwd(),
-      env: {
-        ...process.env,
-        PORT: String(basePort),
-        WORKER_COUNT: String(workerCount),
-      },
-      stdio: ["ignore", "pipe", "pipe"],
+  const multiProcess = spawn(process.execPath, ["--import", "tsx", "src/multi.ts"], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      PORT: String(basePort),
+      WORKER_COUNT: String(workerCount),
     },
-  );
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 
   const stderrChunks: Buffer[] = [];
 
@@ -49,16 +44,13 @@ void test("start:multi shares state between workers", async () => {
   try {
     await waitForCluster(basePort, multiProcess, stderrChunks);
 
-    const createResponse = await fetch(
-      `http://127.0.0.1:${basePort + 1}/api/products`,
-      {
-        body: JSON.stringify(createProductPayload()),
-        headers: {
-          "content-type": "application/json",
-        },
-        method: "POST",
+    const createResponse = await fetch(`http://127.0.0.1:${basePort + 1}/api/products`, {
+      body: JSON.stringify(createProductPayload()),
+      headers: {
+        "content-type": "application/json",
       },
-    );
+      method: "POST",
+    });
 
     assert.equal(createResponse.status, 201);
 
@@ -69,10 +61,7 @@ void test("start:multi shares state between workers", async () => {
     );
 
     assert.equal(getCreatedResponse.status, 200);
-    assert.deepEqual(
-      await parseJson<Product>(getCreatedResponse),
-      createdProduct,
-    );
+    assert.deepEqual(await parseJson<Product>(getCreatedResponse), createdProduct);
 
     const deleteResponse = await fetch(
       `http://127.0.0.1:${basePort + 3}/api/products/${createdProduct.id}`,

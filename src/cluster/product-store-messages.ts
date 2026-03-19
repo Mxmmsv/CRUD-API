@@ -8,9 +8,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-export function isProductStoreRequestMessage(
-  value: unknown,
-): value is ProductStoreRequestMessage {
+export function isProductStoreRequestMessage(value: unknown): value is ProductStoreRequestMessage {
   return (
     isRecord(value) &&
     value.channel === "product-store" &&
@@ -32,9 +30,7 @@ export function isProductStoreResponseMessage(
   );
 }
 
-export function isWorkerReadyMessage(
-  value: unknown,
-): value is WorkerReadyMessage {
+export function isWorkerReadyMessage(value: unknown): value is WorkerReadyMessage {
   return (
     isRecord(value) &&
     value.channel === "cluster-control" &&
