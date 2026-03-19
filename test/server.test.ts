@@ -5,7 +5,7 @@ import { afterEach, beforeEach, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 
 import { buildServer } from "../src/server.ts";
-import { catalog } from "../src/storage/catalog.ts";
+import { createInMemoryProductStore } from "../src/storage/product-store.ts";
 import type { Product } from "../src/storage/types.ts";
 
 let app: FastifyInstance;
@@ -25,8 +25,7 @@ const createProductPayload = (): Omit<Product, "id"> => ({
 });
 
 beforeEach(() => {
-  catalog.length = 0;
-  app = buildServer();
+  app = buildServer({ store: createInMemoryProductStore() });
 });
 
 afterEach(async () => {

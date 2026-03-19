@@ -1,10 +1,13 @@
-import { randomUUID, UUID } from "node:crypto";
+import type { UUID } from "node:crypto";
 
-import Fastify, { FastifyError } from "fastify";
+import Fastify, { type FastifyError } from "fastify";
 import { validate as isUuid } from "uuid";
 
-import { catalog } from "@/storage/catalog.js";
-import { Product } from "@/storage/types.js";
+import {
+  createInMemoryProductStore,
+  type ProductStore,
+} from "@/storage/product-store.js";
+import type { ProductPayload } from "@/storage/types.js";
 
 const productBodySchema = {
   schema: {
@@ -23,13 +26,19 @@ const productBodySchema = {
   },
 };
 
-export function buildServer() {
+type BuildServerOptions = {
+  store?: ProductStore;
+};
+
+export function buildServer({
+  store = createInMemoryProductStore(),
+}: BuildServerOptions = {}) {
   const app = Fastify({
     logger: true,
   });
 
   app.get("/api/products", async function handler(request, reply) {
-    return reply.code(200).send(catalog);
+    return reply.code(200).send(await store.getAll());
   });
 
   app.get<{ Params: { id: UUID } }>(
@@ -43,7 +52,7 @@ export function buildServer() {
           .send({ message: "Invalid productId. UUID is expected." });
       }
 
-      const product = catalog.find((element) => element.id === id);
+      const product = await store.getById(id);
 
       if (!product) {
         return reply.code(404).send({ message: "Product not found" });
@@ -53,33 +62,21 @@ export function buildServer() {
     },
   );
 
-  app.post<{ Body: Omit<Product, "id"> }>(
+  app.post<{ Body: ProductPayload }>(
     "/api/products",
     productBodySchema,
     async (request, reply) => {
-      const { name, description, price, category, inStock } = request.body;
-
-      const product: Product = {
-        id: randomUUID(),
-        name,
-        description,
-        price,
-        category,
-        inStock,
-      };
-
-      catalog.push(product);
+      const product = await store.create(request.body);
 
       return reply.code(201).send(product);
     },
   );
 
-  app.put<{ Params: { id: UUID }; Body: Omit<Product, "id"> }>(
+  app.put<{ Params: { id: UUID }; Body: ProductPayload }>(
     "/api/products/:id",
     productBodySchema,
     async (request, reply) => {
       const { id } = request.params;
-      const { name, description, price, category, inStock } = request.body;
 
       if (!isUuid(id)) {
         return reply
@@ -87,17 +84,11 @@ export function buildServer() {
           .send({ message: "Invalid productId. UUID is expected." });
       }
 
-      const product = catalog.find((element) => element.id === id);
+      const product = await store.update(id, request.body);
 
       if (!product) {
         return reply.code(404).send({ message: "Product not found" });
       }
-
-      product.name = name;
-      product.description = description;
-      product.price = price;
-      product.category = category;
-      product.inStock = inStock;
 
       return reply.code(200).send(product);
     },
@@ -114,13 +105,11 @@ export function buildServer() {
           .send({ message: "Invalid productId. UUID is expected." });
       }
 
-      const productIndex = catalog.findIndex((element) => element.id === id);
+      const isDeleted = await store.remove(id);
 
-      if (productIndex === -1) {
+      if (!isDeleted) {
         return reply.code(404).send({ message: "Product not found" });
       }
-
-      catalog.splice(productIndex, 1);
 
       return reply.code(204).send();
     },

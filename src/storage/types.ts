@@ -8,3 +8,5 @@ export type Product = {
   category: string;
   inStock: boolean;
 };
+
+export type ProductPayload = Omit<Product, "id">;

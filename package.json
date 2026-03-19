@@ -9,9 +9,10 @@
   "scripts": {
     "start:dev": "nodemon --watch src --ext ts --exec \"tsx src/main.ts\"",
     "start:prod": "npm run build && node dist/main.js",
+    "start:multi": "npm run build && node dist/multi.js",
     "build": "tsc && tsc-alias",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test test/server.test.ts",
+    "test": "node --import tsx --test test/server.test.ts test/round-robin.test.ts test/multi.test.ts",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix --max-warnings=0",
     "format": "prettier --write .",

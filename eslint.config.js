@@ -63,6 +63,11 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       ...nodeRules,
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
     },

@@ -1,17 +1,12 @@
 import "dotenv/config";
 
+import { getPortFromEnv } from "@/config/env.js";
 import { buildServer } from "@/server.js";
 
 const app = buildServer();
 
 try {
-  const port = Number(process.env.PORT);
-
-  if (Number.isNaN(port)) {
-    throw new Error("PORT environment variable must be a valid number");
-  }
-
-  await app.listen({ port });
+  await app.listen({ port: getPortFromEnv() });
 } catch (err) {
   app.log.error(err);
   process.exit(1);
