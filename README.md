@@ -18,6 +18,7 @@ Assignment reference: [CRUD API](https://github.com/AlreadyBored/nodejs-assignme
 - [Environment Configuration](#environment-configuration)
 - [Available Scripts](#available-scripts)
 - [Run Modes](#run-modes)
+- [Usage](#usage)
 - [Libraries Used](#libraries-used)
 - [Project Structure](#project-structure)
 
@@ -225,6 +226,73 @@ flowchart LR
 - Starts workers on `PORT + n`
 - Uses `availableParallelism() - 1` worker processes
 - Shares application state across workers through the primary process and IPC
+
+## Usage
+
+> [!TIP]
+> The examples below assume the application is already running on `http://localhost:4000`.
+
+Base API path:
+
+```text
+http://localhost:4000/api/products
+```
+
+### Get all products
+
+```bash
+curl http://localhost:4000/api/products
+```
+
+### Create a product
+
+```bash
+curl -X POST http://localhost:4000/api/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Mechanical Keyboard",
+    "description": "Hot-swappable 75% keyboard",
+    "price": 149.99,
+    "category": "electronics",
+    "inStock": true
+  }'
+```
+
+### Get a product by id
+
+```bash
+curl http://localhost:4000/api/products/<productId>
+```
+
+### Update a product
+
+```bash
+curl -X PUT http://localhost:4000/api/products/<productId> \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Mechanical Keyboard Pro",
+    "description": "Hot-swappable 75% keyboard with aluminum case",
+    "price": 179.99,
+    "category": "electronics",
+    "inStock": false
+  }'
+```
+
+### Delete a product
+
+```bash
+curl -X DELETE http://localhost:4000/api/products/<productId>
+```
+
+### Common response behavior
+
+- `GET /api/products` returns `200` and an array of products
+- `POST /api/products` returns `201` and the created product
+- `PUT /api/products/:id` returns `200` and the updated product
+- `DELETE /api/products/:id` returns `204` with an empty response body
+- invalid UUIDs return `400`
+- missing records return `404`
+- invalid request bodies return `400`
 
 ## Libraries Used
 
