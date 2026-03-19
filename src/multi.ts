@@ -11,16 +11,20 @@ import {
   isProductStoreRequestMessage,
   isWorkerReadyMessage,
 } from "@/cluster/index.js";
-import { getPortFromEnv, getWorkerCountFromEnv } from "@/config/env.js";
+import { getPortFromEnv } from "@/config/env.js";
 import { createInMemoryProductStore, createIpcProductStore } from "@/storage/index.js";
 import type { ProductStoreRequestMessage, ProductStoreResponseMessage } from "@/cluster/index.js";
 import type { ProductStore } from "@/storage/index.js";
 
 import { buildServer } from "./server.js";
 
-const defaultWorkerCount = Math.max(1, availableParallelism() - 1);
 const basePort = getPortFromEnv();
-const workerCount = getWorkerCountFromEnv(defaultWorkerCount);
+const workerCount = availableParallelism() - 1;
+const exposeWorkerPort = process.env.EXPOSE_WORKER_PORT === "1";
+
+if (workerCount < 1) {
+  throw new Error("Multi-process mode requires at least 2 available CPU threads");
+}
 
 if (cluster.isPrimary) {
   await startPrimary();
@@ -190,7 +194,10 @@ function proxyRequest(
       port: workerPort,
     },
     (workerResponse) => {
-      outgoingResponse.writeHead(workerResponse.statusCode ?? 500, workerResponse.headers);
+      outgoingResponse.writeHead(workerResponse.statusCode ?? 500, {
+        ...workerResponse.headers,
+        ...(exposeWorkerPort ? { "x-worker-port": String(workerPort) } : {}),
+      });
 
       workerResponse.pipe(outgoingResponse);
     },

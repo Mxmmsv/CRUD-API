@@ -1,7 +1,7 @@
 declare namespace NodeJS {
   interface ProcessEnv {
     PORT: string;
-    WORKER_COUNT?: string;
+    EXPOSE_WORKER_PORT?: string;
     WORKER_PORT?: string;
   }
 }

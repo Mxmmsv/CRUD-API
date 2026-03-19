@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { createServer } from "node:net";
+import { createConnection, createServer } from "node:net";
+import { availableParallelism } from "node:os";
 import { test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 
@@ -11,7 +12,8 @@ type ErrorResponse = {
   message: string;
 };
 
-const workerCount = 3;
+const workerCount = availableParallelism() - 1;
+const testIsSkipped = workerCount < 1;
 
 const createProductPayload = () => ({
   name: "Keyboard",
@@ -23,28 +25,54 @@ const createProductPayload = () => ({
 
 const parseJson = async <T>(response: Response): Promise<T> => (await response.json()) as T;
 
-void test("start:multi shares state between workers", async () => {
+void test(
+  "start:multi balances requests across workers in round-robin order",
+  { skip: testIsSkipped },
+  async () => {
+    const basePort = await getFreePortBlock(workerCount + 1);
+    const multiProcess = startMultiProcess(basePort);
+
+    try {
+      await waitForCluster(basePort, multiProcess.process, multiProcess.stderrChunks);
+
+      const workerPorts = createWorkerPorts(basePort);
+      const expectedWorkerPorts = [...workerPorts, workerPorts[0]];
+
+      for (const expectedWorkerPort of expectedWorkerPorts) {
+        const response = await fetch(`http://127.0.0.1:${basePort}/api/products`);
+
+        assert.equal(response.status, 200);
+        assert.equal(getWorkerPortFromHeader(response), expectedWorkerPort);
+      }
+    } finally {
+      multiProcess.process.kill();
+
+      await once(multiProcess.process, "exit");
+    }
+  },
+);
+
+void test("start:multi shares state between workers", { skip: testIsSkipped }, async () => {
   const basePort = await getFreePortBlock(workerCount + 1);
-  const multiProcess = spawn(process.execPath, ["--import", "tsx", "src/multi.ts"], {
-    cwd: process.cwd(),
-    env: {
-      ...process.env,
-      PORT: String(basePort),
-      WORKER_COUNT: String(workerCount),
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  const stderrChunks: Buffer[] = [];
-
-  multiProcess.stderr.on("data", (chunk: Buffer | string) => {
-    stderrChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  });
+  const multiProcess = startMultiProcess(basePort);
 
   try {
-    await waitForCluster(basePort, multiProcess, stderrChunks);
+    await waitForCluster(basePort, multiProcess.process, multiProcess.stderrChunks);
 
-    const createResponse = await fetch(`http://127.0.0.1:${basePort + 1}/api/products`, {
+    const workerPorts = createWorkerPorts(basePort);
+    const createWorkerPort = workerPorts.at(0);
+    const readWorkerPort = workerPorts.at(1) ?? workerPorts.at(0);
+    const deleteWorkerPort = workerPorts.at(2) ?? workerPorts.at(-1);
+
+    if (
+      createWorkerPort === undefined ||
+      readWorkerPort === undefined ||
+      deleteWorkerPort === undefined
+    ) {
+      throw new Error("Unable to resolve worker ports for the multi-process test");
+    }
+
+    const createResponse = await fetch(`http://127.0.0.1:${createWorkerPort}/api/products`, {
       body: JSON.stringify(createProductPayload()),
       headers: {
         "content-type": "application/json",
@@ -57,14 +85,14 @@ void test("start:multi shares state between workers", async () => {
     const createdProduct = await parseJson<Product>(createResponse);
 
     const getCreatedResponse = await fetch(
-      `http://127.0.0.1:${basePort + 2}/api/products/${createdProduct.id}`,
+      `http://127.0.0.1:${readWorkerPort}/api/products/${createdProduct.id}`,
     );
 
     assert.equal(getCreatedResponse.status, 200);
     assert.deepEqual(await parseJson<Product>(getCreatedResponse), createdProduct);
 
     const deleteResponse = await fetch(
-      `http://127.0.0.1:${basePort + 3}/api/products/${createdProduct.id}`,
+      `http://127.0.0.1:${deleteWorkerPort}/api/products/${createdProduct.id}`,
       {
         method: "DELETE",
       },
@@ -73,7 +101,7 @@ void test("start:multi shares state between workers", async () => {
     assert.equal(deleteResponse.status, 204);
 
     const getDeletedResponse = await fetch(
-      `http://127.0.0.1:${basePort + 1}/api/products/${createdProduct.id}`,
+      `http://127.0.0.1:${createWorkerPort}/api/products/${createdProduct.id}`,
     );
 
     assert.equal(getDeletedResponse.status, 404);
@@ -81,11 +109,15 @@ void test("start:multi shares state between workers", async () => {
       message: "Product not found",
     });
   } finally {
-    multiProcess.kill();
+    multiProcess.process.kill();
 
-    await once(multiProcess, "exit");
+    await once(multiProcess.process, "exit");
   }
 });
+
+function createWorkerPorts(basePort: number): number[] {
+  return Array.from({ length: workerCount }, (_, index) => basePort + index + 1);
+}
 
 async function getFreePortBlock(size: number) {
   for (let basePort = 45000; basePort < 65000 - size; basePort += size + 1) {
@@ -145,7 +177,7 @@ async function waitForCluster(
   multiProcess: ReturnType<typeof spawn>,
   stderrChunks: Buffer[],
 ) {
-  const deadline = Date.now() + 15000;
+  const deadline = Date.now() + Math.max(15000, workerCount * 1000);
 
   while (Date.now() < deadline) {
     if (multiProcess.exitCode !== null) {
@@ -153,17 +185,12 @@ async function waitForCluster(
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:${basePort}/api/products`);
-
-      if (response.status === 200) {
-        return;
-      }
+      await waitForPort(basePort);
+      return;
     } catch {
       await delay(200);
       continue;
     }
-
-    await delay(200);
   }
 
   throw new Error(readStderr(stderrChunks));
@@ -171,4 +198,60 @@ async function waitForCluster(
 
 function readStderr(stderrChunks: Buffer[]): string {
   return Buffer.concat(stderrChunks).toString("utf8");
+}
+
+async function waitForPort(port: number): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const socket = createConnection({
+      host: "127.0.0.1",
+      port,
+    });
+
+    socket.once("connect", () => {
+      socket.end();
+      resolve();
+    });
+    socket.once("error", (error) => {
+      socket.destroy();
+      reject(error);
+    });
+  });
+}
+
+function getWorkerPortFromHeader(response: Response): number {
+  const workerPortHeader = response.headers.get("x-worker-port");
+
+  if (!workerPortHeader) {
+    throw new Error("Load balancer response does not include x-worker-port header");
+  }
+
+  const workerPort = Number(workerPortHeader);
+
+  if (!Number.isInteger(workerPort)) {
+    throw new Error("Load balancer returned an invalid worker port header");
+  }
+
+  return workerPort;
+}
+
+function startMultiProcess(basePort: number) {
+  const processHandle = spawn(process.execPath, ["--import", "tsx", "src/multi.ts"], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      EXPOSE_WORKER_PORT: "1",
+      PORT: String(basePort),
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const stderrChunks: Buffer[] = [];
+
+  processHandle.stderr.on("data", (chunk: Buffer | string) => {
+    stderrChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  });
+
+  return {
+    process: processHandle,
+    stderrChunks,
+  };
 }
