@@ -149,7 +149,7 @@ async function waitForCluster(
 
   while (Date.now() < deadline) {
     if (multiProcess.exitCode !== null) {
-      throw new Error(stderrChunks.join("").toString("utf8"));
+      throw new Error(readStderr(stderrChunks));
     }
 
     try {
@@ -166,5 +166,9 @@ async function waitForCluster(
     await delay(200);
   }
 
-  throw new Error(stderrChunks.join("").toString("utf8"));
+  throw new Error(readStderr(stderrChunks));
+}
+
+function readStderr(stderrChunks: Buffer[]): string {
+  return Buffer.concat(stderrChunks).toString("utf8");
 }
