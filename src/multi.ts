@@ -12,7 +12,6 @@ import {
   isWorkerReadyMessage,
 } from "@/cluster/index.js";
 import { getPortFromEnv, getWorkerCountFromEnv } from "@/config/env.js";
-import { buildServer } from "@/server.js";
 import {
   createInMemoryProductStore,
   createIpcProductStore,
@@ -22,6 +21,8 @@ import type {
   ProductStoreResponseMessage,
 } from "@/cluster/index.js";
 import type { ProductStore } from "@/storage/index.js";
+
+import { buildServer } from "./server.js";
 
 const defaultWorkerCount = Math.max(1, availableParallelism() - 1);
 const basePort = getPortFromEnv();

@@ -5,7 +5,8 @@ import type { UUID } from "node:crypto";
 
 import { createInMemoryProductStore } from "@/storage/index.js";
 import type { ProductPayload } from "@/storage/index.js";
-import type { BuildServerOptions } from "@/types.js";
+
+import type { BuildServerOptions } from "./types.js";
 
 const productBodySchema = {
   schema: {

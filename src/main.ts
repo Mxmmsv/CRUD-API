@@ -1,7 +1,8 @@
 import "dotenv/config";
 
 import { getPortFromEnv } from "@/config/env.js";
-import { buildServer } from "@/server.js";
+
+import { buildServer } from "./server.js";
 
 const app = buildServer();
 
