@@ -4,8 +4,8 @@ import { afterEach, beforeEach, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 
 import { buildServer } from "../src/server.ts";
-import { createInMemoryProductStore } from "../src/storage/product-store.ts";
-import type { Product } from "../src/storage/types.ts";
+import { createInMemoryProductStore } from "../src/storage/index.ts";
+import type { Product } from "../src/storage/index.ts";
 
 let app: FastifyInstance;
 

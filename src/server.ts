@@ -3,9 +3,9 @@ import { validate as isUuid } from "uuid";
 import type { FastifyError } from "fastify";
 import type { UUID } from "node:crypto";
 
-import { createInMemoryProductStore } from "@/storage/product-store.js";
-import type { ProductStore } from "@/storage/product-store.js";
-import type { ProductPayload } from "@/storage/types.js";
+import { createInMemoryProductStore } from "@/storage/index.js";
+import type { ProductPayload } from "@/storage/index.js";
+import type { BuildServerOptions } from "@/types.js";
 
 const productBodySchema = {
   schema: {
@@ -22,10 +22,6 @@ const productBodySchema = {
       },
     },
   },
-};
-
-type BuildServerOptions = {
-  store?: ProductStore;
 };
 
 export function buildServer({

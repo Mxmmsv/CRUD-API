@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { createRoundRobinSelector } from "../src/cluster/round-robin.ts";
+import { createRoundRobinSelector } from "../src/cluster/index.ts";
 
 void test("round-robin selector cycles through worker ports", () => {
   const selectWorkerPort = createRoundRobinSelector([4001, 4002, 4003]);

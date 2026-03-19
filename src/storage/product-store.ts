@@ -1,18 +1,15 @@
 import { randomUUID } from "node:crypto";
 import type { UUID } from "node:crypto";
 
-import { isProductStoreResponseMessage } from "@/cluster/product-store-messages.js";
-import type { ProductStoreRequestMessage } from "@/cluster/product-store-messages.js";
+import { isProductStoreResponseMessage } from "@/cluster/index.js";
+import type { ProductStoreRequestMessage } from "@/cluster/index.js";
 
-import type { Product, ProductPayload } from "./types.js";
-
-export type ProductStore = {
-  create(payload: ProductPayload): Promise<Product>;
-  getAll(): Promise<Product[]>;
-  getById(id: UUID): Promise<Product | undefined>;
-  remove(id: UUID): Promise<boolean>;
-  update(id: UUID, payload: ProductPayload): Promise<Product | undefined>;
-};
+import type {
+  PendingRequest,
+  Product,
+  ProductPayload,
+  ProductStore,
+} from "./types.js";
 
 export function createInMemoryProductStore(): ProductStore {
   const catalog: Product[] = [];
@@ -64,11 +61,6 @@ export function createInMemoryProductStore(): ProductStore {
     },
   };
 }
-
-type PendingRequest = {
-  reject: (reason?: unknown) => void;
-  resolve: (value: unknown) => void;
-};
 
 export function createIpcProductStore(): ProductStore {
   const pendingRequests = new Map<string, PendingRequest>();

@@ -5,7 +5,7 @@ import { createServer } from "node:net";
 import { test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { Product } from "../src/storage/types.ts";
+import type { Product } from "../src/storage/index.ts";
 
 type ErrorResponse = {
   message: string;

@@ -10,3 +10,16 @@ export type Product = {
 };
 
 export type ProductPayload = Omit<Product, "id">;
+
+export type ProductStore = {
+  create(payload: ProductPayload): Promise<Product>;
+  getAll(): Promise<Product[]>;
+  getById(id: UUID): Promise<Product | undefined>;
+  remove(id: UUID): Promise<boolean>;
+  update(id: UUID, payload: ProductPayload): Promise<Product | undefined>;
+};
+
+export type PendingRequest = {
+  reject: (reason?: unknown) => void;
+  resolve: (value: unknown) => void;
+};

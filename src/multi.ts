@@ -7,21 +7,21 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import {
+  createRoundRobinSelector,
   isProductStoreRequestMessage,
   isWorkerReadyMessage,
-} from "@/cluster/product-store-messages.js";
-import { createRoundRobinSelector } from "@/cluster/round-robin.js";
+} from "@/cluster/index.js";
 import { getPortFromEnv, getWorkerCountFromEnv } from "@/config/env.js";
 import { buildServer } from "@/server.js";
 import {
   createInMemoryProductStore,
   createIpcProductStore,
-} from "@/storage/product-store.js";
+} from "@/storage/index.js";
 import type {
   ProductStoreRequestMessage,
   ProductStoreResponseMessage,
-} from "@/cluster/product-store-messages.js";
-import type { ProductStore } from "@/storage/product-store.js";
+} from "@/cluster/index.js";
+import type { ProductStore } from "@/storage/index.js";
 
 const defaultWorkerCount = Math.max(1, availableParallelism() - 1);
 const basePort = getPortFromEnv();
