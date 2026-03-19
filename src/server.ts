@@ -1,12 +1,10 @@
+import Fastify from "fastify";
+import { validate as isUuid } from "uuid";
+import type { FastifyError } from "fastify";
 import type { UUID } from "node:crypto";
 
-import Fastify, { type FastifyError } from "fastify";
-import { validate as isUuid } from "uuid";
-
-import {
-  createInMemoryProductStore,
-  type ProductStore,
-} from "@/storage/product-store.js";
+import { createInMemoryProductStore } from "@/storage/product-store.js";
+import type { ProductStore } from "@/storage/product-store.js";
 import type { ProductPayload } from "@/storage/types.js";
 
 const productBodySchema = {

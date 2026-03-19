@@ -1,20 +1,14 @@
 import "dotenv/config";
 
 import cluster from "node:cluster";
-import {
-  createServer,
-  type IncomingMessage,
-  request,
-  type ServerResponse,
-} from "node:http";
+import { createServer, request } from "node:http";
 import { availableParallelism } from "node:os";
 import { setTimeout as delay } from "node:timers/promises";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 import {
   isProductStoreRequestMessage,
   isWorkerReadyMessage,
-  type ProductStoreRequestMessage,
-  type ProductStoreResponseMessage,
 } from "@/cluster/product-store-messages.js";
 import { createRoundRobinSelector } from "@/cluster/round-robin.js";
 import { getPortFromEnv, getWorkerCountFromEnv } from "@/config/env.js";
@@ -22,8 +16,12 @@ import { buildServer } from "@/server.js";
 import {
   createInMemoryProductStore,
   createIpcProductStore,
-  type ProductStore,
 } from "@/storage/product-store.js";
+import type {
+  ProductStoreRequestMessage,
+  ProductStoreResponseMessage,
+} from "@/cluster/product-store-messages.js";
+import type { ProductStore } from "@/storage/product-store.js";
 
 const defaultWorkerCount = Math.max(1, availableParallelism() - 1);
 const basePort = getPortFromEnv();

@@ -1,7 +1,7 @@
 import js from "@eslint/js";
 import prettierConfig from "eslint-config-prettier";
 import nodePlugin from "eslint-plugin-n";
-import simpleImportSort from "eslint-plugin-simple-import-sort";
+import perfectionist from "eslint-plugin-perfectionist";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -14,6 +14,35 @@ const nodeRules = {
   "n/no-missing-import": "off",
   "n/no-process-exit": "off",
   "n/no-unpublished-import": "off",
+};
+
+const importSortRules = {
+  "perfectionist/sort-imports": [
+    "error",
+    {
+      groups: [
+        "side-effect",
+        { newlinesBetween: 1 },
+        ["value-builtin", "value-external"],
+        { newlinesBetween: 0 },
+        ["type-builtin", "type-external"],
+        { newlinesBetween: 1 },
+        "value-internal",
+        { newlinesBetween: 0 },
+        "type-internal",
+        { newlinesBetween: 1 },
+        ["value-parent", "value-sibling", "value-index"],
+        { newlinesBetween: 0 },
+        ["type-parent", "type-sibling", "type-index"],
+        "ts-equals-import",
+        "unknown",
+      ],
+      internalPattern: ["^@/.+"],
+      newlinesBetween: 0,
+      order: "asc",
+      type: "natural",
+    },
+  ],
 };
 
 export default [
@@ -29,13 +58,12 @@ export default [
     },
     plugins: {
       n: nodePlugin,
-      "simple-import-sort": simpleImportSort,
+      perfectionist,
     },
     rules: {
       ...js.configs.recommended.rules,
       ...nodeRules,
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
+      ...importSortRules,
     },
   },
   ...tseslint.configs.recommendedTypeChecked.map((config) => ({
@@ -58,18 +86,24 @@ export default [
     },
     plugins: {
       n: nodePlugin,
-      "simple-import-sort": simpleImportSort,
+      perfectionist,
     },
     rules: {
       ...js.configs.recommended.rules,
       ...nodeRules,
+      ...importSortRules,
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        {
+          fixStyle: "separate-type-imports",
+          prefer: "type-imports",
+        },
+      ],
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_" },
       ],
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
     },
   },
   prettierConfig,

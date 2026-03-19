@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, test } from "node:test";
-
 import type { FastifyInstance } from "fastify";
 
 import { buildServer } from "../src/server.ts";

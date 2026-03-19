@@ -1,9 +1,8 @@
-import { randomUUID, type UUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
+import type { UUID } from "node:crypto";
 
-import {
-  isProductStoreResponseMessage,
-  type ProductStoreRequestMessage,
-} from "@/cluster/product-store-messages.js";
+import { isProductStoreResponseMessage } from "@/cluster/product-store-messages.js";
+import type { ProductStoreRequestMessage } from "@/cluster/product-store-messages.js";
 
 import type { Product, ProductPayload } from "./types.js";
 
