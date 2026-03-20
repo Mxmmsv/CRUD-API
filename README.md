@@ -70,20 +70,10 @@ npm install
 cp .env.example .env
 ```
 
-### 5. Optionally confirm your local toolchain
+### 5. Switch to the `develop` branch
 
 ```bash
-node --version
-```
-
-```bash
-npm --version
-```
-
-### 6. Create and switch to a local `develop` branch
-
-```bash
-git switch -c develop
+git switch develop
 ```
 
 ## Environment Configuration
