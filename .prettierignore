@@ -1,0 +1,7 @@
+dist
+node_modules
+docs
+AGENTS.md
+*.md
+package-lock.json
+.env

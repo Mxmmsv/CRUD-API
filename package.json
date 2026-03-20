@@ -1,0 +1,41 @@
+{
+  "name": "crud-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/main.js",
+  "engines": {
+    "node": ">=24.10.0"
+  },
+  "scripts": {
+    "start:dev": "nodemon --watch src --ext ts --exec \"tsx src/main.ts\"",
+    "start:prod": "npm run build && node dist/main.js",
+    "start:multi": "npm run build && node dist/multi.js",
+    "build": "tsc && tsc-alias",
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test test/server.test.ts test/round-robin.test.ts test/multi.test.ts",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "fastify": "^5.8.2",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.0",
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^17.24.0",
+    "eslint-plugin-perfectionist": "^5.7.0",
+    "globals": "^17.4.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
+    "tsc-alias": "^1.8.16",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.1"
+  }
+}
